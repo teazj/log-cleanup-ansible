@@ -1,0 +1,49 @@
+- name: check /data exists
+  shell: ls / | grep "data"
+  register: data_exist
+  ignore_errors: True
+  tags:
+  - L1
+- name: copy {{ log-cleanup_file }}
+  copy: src=Log-cleanup.tar.gz dest=/data/
+  tags:
+  - L2
+- name: copy {{ PyYAML_file }}
+  copy: src=PyYAML-5.1.tar.gz dest=/data/
+  tags:
+  - L3
+- name: tar -xf {{ PyYAML_file }}
+  shell: cd /data && tar -xf PyYAML-5.1.tar.gz
+  tags:
+  - L5
+- name: install PyYAML
+  shell: |
+    cd /data/PyYAML-5.1
+    python setup.py install
+  tags:
+  - L6
+- name: tar -xf {{ log-cleanup_file }}
+  shell: cd /data && tar -xf Log-cleanup.tar.gz
+  tags:
+  - L7
+- name: sync time
+  cron:
+    name: "check dirs"
+    minute: "*/30"
+    job: "/usr/sbin/ntpdate cn.ntp.org.cn >/dev/null 2>&1"
+  tags:
+  - L8
+- name: logs cleanup
+  cron:
+    name: "logs cleanup"
+    minute: "*"
+    hour: "*/1"
+    job: "/usr/bin/python /data/Log-cleanup/run/run.py >/dev/null 2>&1"
+  tags:
+  - L9
+- name: clean  {{ log-cleanup_file }} {{ PyYAML_file }}
+  shell: |
+    rm -rf /data/PyYAML-5.1.tar.gz
+    rm -rf /data/Log-cleanup.tar.gz
+  tags:
+  - L10

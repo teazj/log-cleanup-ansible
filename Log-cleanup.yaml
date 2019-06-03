@@ -1,0 +1,5 @@
+- hosts: Log-cleanup
+  become_user: root
+  become: True
+  roles:
+    - role: Log-cleanup
